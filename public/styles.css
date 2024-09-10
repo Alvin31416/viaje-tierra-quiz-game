@@ -1,0 +1,89 @@
+
+#### `public/styles.css`
+
+```css
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+#game-container {
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.2);
+    padding: 30px;
+    max-width: 800px;
+    width: 90%;
+}
+h1, h2 {
+    color: #1a2a6c;
+    text-align: center;
+}
+#login-section, #lobby-section, #game-section {
+    margin-top: 20px;
+}
+input, button {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: none;
+    border-radius: 5px;
+}
+button {
+    background-color: #4CAF50;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+button:hover {
+    background-color: #45a049;
+}
+#question {
+    font-size: 18px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+#options {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+.option {
+    background-color: #f0f0f0;
+    border: none;
+    padding: 15px;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+.option:hover {
+    background-color: #e0e0e0;
+}
+#players-list, #scoreboard {
+    margin-top: 20px;
+    background-color: #f0f0f0;
+    padding: 15px;
+    border-radius: 5px;
+}
+#timer {
+    font-size: 24px;
+    text-align: center;
+    margin: 10px 0;
+}
+#round-info {
+    text-align: center;
+    font-weight: bold;
+    margin: 10px 0;
+}
+#developer-info {
+    text-align: center;
+    font-size: 12px;
+    margin-top: 20px;
+    color: #666;
+}
+```
