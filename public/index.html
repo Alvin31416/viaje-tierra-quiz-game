@@ -1,0 +1,425 @@
+# Juego Quiz: Viaje al centro de la Tierra
+
+Este repositorio contiene un juego de preguntas interactivo basado en el libro "Viaje al centro de la Tierra" de Julio Verne.
+
+## Estructura del Repositorio
+
+```
+viaje-tierra-quiz-game/
+│
+├── public/
+│   ├── index.html
+│   ├── styles.css
+│   └── client.js
+│
+├── server.js
+├── package.json
+└── README.md
+```
+
+## Instalación
+
+1. Clona este repositorio:
+   ```
+   git clone https://github.com/tu-usuario/viaje-tierra-quiz-game.git
+   ```
+
+2. Navega al directorio del proyecto:
+   ```
+   cd viaje-tierra-quiz-game
+   ```
+
+3. Instala las dependencias:
+   ```
+   npm install
+   ```
+
+## Uso
+
+1. Inicia el servidor:
+   ```
+   npm start
+   ```
+
+2. Abre un navegador y ve a `http://localhost:3000`
+
+## Desarrolladores
+
+Desarrollado por Alvin P., Lester P. y Raul V.
+
+## Licencia
+
+Este proyecto está bajo la Licencia MIT.
+
+---
+
+### Contenido de los archivos principales:
+
+#### `public/index.html`
+
+```html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viaje al centro de la Tierra - Quiz Avanzado</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="game-container">
+        <h1>Viaje al centro de la Tierra - Quiz Avanzado</h1>
+        
+        <div id="login-section">
+            <input type="text" id="username" placeholder="Nombre de usuario">
+            <button onclick="joinGame()">Unirse al juego</button>
+        </div>
+
+        <div id="lobby-section" style="display: none;">
+            <h2>Sala de espera</h2>
+            <div id="players-list"></div>
+            <div id="player-count"></div>
+            <button id="start-game" onclick="startGame()" style="display: none;">Iniciar juego</button>
+        </div>
+
+        <div id="game-section" style="display: none;">
+            <div id="round-info"></div>
+            <div id="timer"></div>
+            <div id="question"></div>
+            <div id="options"></div>
+            <div id="scoreboard"></div>
+        </div>
+
+        <div id="developer-info">
+            Desarrollado por Alvin P., Lester P. y Raul V.
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="client.js"></script>
+</body>
+</html>
+```
+
+#### `public/styles.css`
+
+```css
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+#game-container {
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.2);
+    padding: 30px;
+    max-width: 800px;
+    width: 90%;
+}
+h1, h2 {
+    color: #1a2a6c;
+    text-align: center;
+}
+#login-section, #lobby-section, #game-section {
+    margin-top: 20px;
+}
+input, button {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: none;
+    border-radius: 5px;
+}
+button {
+    background-color: #4CAF50;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+button:hover {
+    background-color: #45a049;
+}
+#question {
+    font-size: 18px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+#options {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+.option {
+    background-color: #f0f0f0;
+    border: none;
+    padding: 15px;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+.option:hover {
+    background-color: #e0e0e0;
+}
+#players-list, #scoreboard {
+    margin-top: 20px;
+    background-color: #f0f0f0;
+    padding: 15px;
+    border-radius: 5px;
+}
+#timer {
+    font-size: 24px;
+    text-align: center;
+    margin: 10px 0;
+}
+#round-info {
+    text-align: center;
+    font-weight: bold;
+    margin: 10px 0;
+}
+#developer-info {
+    text-align: center;
+    font-size: 12px;
+    margin-top: 20px;
+    color: #666;
+}
+```
+
+#### `public/client.js`
+
+```javascript
+const socket = io();
+let currentPlayer = null;
+let isHost = false;
+let currentRound = 0;
+let totalRounds = 5;
+let playerScores = {};
+
+function joinGame() {
+    const username = document.getElementById('username').value;
+    if (username) {
+        socket.emit('joinGame', username);
+    }
+}
+
+function startGame() {
+    if (isHost) {
+        socket.emit('startGame');
+    }
+}
+
+function showQuestion(questionData) {
+    document.getElementById('question').textContent = questionData.question;
+    const optionsContainer = document.getElementById('options');
+    optionsContainer.innerHTML = '';
+    questionData.options.forEach((option, index) => {
+        const button = document.createElement('button');
+        button.textContent = option;
+        button.classList.add('option');
+        button.onclick = () => selectAnswer(index);
+        optionsContainer.appendChild(button);
+    });
+}
+
+function selectAnswer(optionIndex) {
+    socket.emit('submitAnswer', optionIndex);
+}
+
+function updateScoreboard() {
+    const scoreboard = document.getElementById('scoreboard');
+    scoreboard.innerHTML = '<h3>Puntuaciones:</h3>';
+    Object.entries(playerScores).forEach(([player, score]) => {
+        scoreboard.innerHTML += `<p>${player}: ${score}</p>`;
+    });
+}
+
+function updateTimer(time) {
+    document.getElementById('timer').textContent = `Tiempo restante: ${time}s`;
+}
+
+function updatePlayersList(players) {
+    const playersList = document.getElementById('players-list');
+    playersList.innerHTML = '<h3>Jugadores:</h3>';
+    players.forEach(player => {
+        playersList.innerHTML += `<p>${player}</p>`;
+    });
+    document.getElementById('player-count').textContent = `Jugadores: ${players.length}/50`;
+}
+
+socket.on('gameState', (state) => {
+    currentPlayer = state.currentPlayer;
+    isHost = state.isHost;
+    document.getElementById('login-section').style.display = 'none';
+    document.getElementById('lobby-section').style.display = 'block';
+    if (isHost) {
+        document.getElementById('start-game').style.display = 'block';
+    }
+    updatePlayersList(state.players);
+});
+
+socket.on('gameStarted', () => {
+    document.getElementById('lobby-section').style.display = 'none';
+    document.getElementById('game-section').style.display = 'block';
+});
+
+socket.on('newQuestion', (questionData) => {
+    currentRound++;
+    document.getElementById('round-info').textContent = `Ronda ${currentRound} de ${totalRounds}`;
+    showQuestion(questionData);
+});
+
+socket.on('updateTimer', (time) => {
+    updateTimer(time);
+});
+
+socket.on('roundEnd', (results) => {
+    playerScores = results.scores;
+    updateScoreboard();
+});
+
+socket.on('gameEnd', () => {
+    alert('¡Juego terminado! Revisa la puntuación final.');
+});
+```
+
+#### `server.js`
+
+```javascript
+const express = require('express');
+const http = require('http');
+const socketIo = require('socket.io');
+
+const app = express();
+const server = http.createServer(app);
+const io = socketIo(server);
+
+app.use(express.static('public'));
+
+const MIN_PLAYERS = 5;
+const MAX_PLAYERS = 50;
+const QUESTION_TIME = 20; // seconds
+
+let players = [];
+let gameInProgress = false;
+let currentQuestion = 0;
+let scores = {};
+let timer;
+
+const questions = [
+    {
+        question: "¿Quién es el autor de 'Viaje al centro de la Tierra'?",
+        options: ["Julio Verne", "H.G. Wells", "Arthur Conan Doyle", "Edgar Allan Poe"],
+        correctAnswer: 0,
+        type: "multiple"
+    },
+    // Añadir más preguntas aquí...
+];
+
+io.on('connection', (socket) => {
+    socket.on('joinGame', (username) => {
+        if (players.length >= MAX_PLAYERS || gameInProgress) {
+            socket.emit('joinError', 'No se puede unir al juego en este momento.');
+            return;
+        }
+
+        players.push({ id: socket.id, username, score: 0 });
+        scores[username] = 0;
+        
+        socket.emit('gameState', {
+            currentPlayer: username,
+            isHost: players.length === 1,
+            players: players.map(p => p.username)
+        });
+
+        io.emit('playerJoined', players.map(p => p.username));
+    });
+
+    socket.on('startGame', () => {
+        if (players.length >= MIN_PLAYERS && !gameInProgress) {
+            gameInProgress = true;
+            currentQuestion = 0;
+            io.emit('gameStarted');
+            sendQuestion();
+        }
+    });
+
+    socket.on('submitAnswer', (answerIndex) => {
+        const player = players.find(p => p.id === socket.id);
+        if (player && gameInProgress) {
+            if (answerIndex === questions[currentQuestion].correctAnswer) {
+                player.score += 1;
+                scores[player.username] += 1;
+            }
+        }
+    });
+
+    socket.on('disconnect', () => {
+        players = players.filter(p => p.id !== socket.id);
+        io.emit('playerLeft', players.map(p => p.username));
+        if (players.length < MIN_PLAYERS && gameInProgress) {
+            endGame();
+        }
+    });
+});
+
+function sendQuestion() {
+    if (currentQuestion < questions.length) {
+        io.emit('newQuestion', {
+            question: questions[currentQuestion].question,
+            options: questions[currentQuestion].options
+        });
+        startTimer();
+    } else {
+        endGame();
+    }
+}
+
+function startTimer() {
+    let timeLeft = QUESTION_TIME;
+    timer = setInterval(() => {
+        io.emit('updateTimer', timeLeft);
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            currentQuestion++;
+            io.emit('roundEnd', { scores });
+            setTimeout(sendQuestion, 3000);
+        }
+        timeLeft--;
+    }, 1000);
+}
+
+function endGame() {
+    gameInProgress = false;
+    io.emit('gameEnd', { finalScores: scores });
+    players = [];
+    scores = {};
+}
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+```
+
+#### `package.json`
+
+```json
+{
+  "name": "viaje-tierra-quiz-game",
+  "version": "1.0.0",
+  "description": "Juego de preguntas interactivo basado en 'Viaje al centro de la Tierra'",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "socket.io": "^4.5.4"
+  },
+  "author": "Alvin P., Lester P., Raul V.",
+  "license": "MIT"
+}
+```
